@@ -1,0 +1,14 @@
+Analyze the provided dataset of highest-grossing films.
+
+Answer the following questions and respond with a JSON array of strings containing the answers.
+
+1. Which film grossed the highest amount worldwide?
+2. How many films released after 2015 grossed over $1 billion?
+3. What is the average worldwide gross of films with a Peak rank of 1?
+4. List the top 3 films by worldwide gross that were released before 2010.
+
+Respond ONLY with a JSON array of answers as strings or numbers, for example:
+
+["Avatar", 25, 1500000000, ["Titanic", "Avatar", "The Lord of the Rings: The Return of the King"]]
+
+Do not include explanations, code, or additional text.
