@@ -3,4 +3,4 @@ uvicorn[standard]
 python-dotenv
 pandas
 PyPDF2
-requests
+python-multiport
