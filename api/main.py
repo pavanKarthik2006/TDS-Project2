@@ -4,19 +4,16 @@ from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
 import io
-import pandas as pd
 from PyPDF2 import PdfReader
 import requests
 import logging
 import time
 import json
-from typing import Any
 
-load_dotenv()
 
 app = FastAPI()
 
-# CORS for frontend/tester access (optional)
+# CORS config (optional, keep for dev or if using frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,15 +25,13 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 
 PROMPT_PATH = os.path.join("prompts", "abdul_task_breakdown.txt")
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB max per file
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 LLM7_API_URL = "https://api.llm7.io/v1/chat/completions"
 MODEL = "meta-llama/Meta-Llama-3-70B-Instruct"
 
 def extract_text_from_file(file: UploadFile, file_bytes: bytes) -> str:
     filename = file.filename.lower()
-    if filename.endswith(".txt"):
-        return file_bytes.decode("utf-8", errors="ignore")
-    elif filename.endswith(".csv"):
+    if filename.endswith(".txt") or filename.endswith(".csv"):
         return file_bytes.decode("utf-8", errors="ignore")
     elif filename.endswith(".pdf"):
         reader = PdfReader(io.BytesIO(file_bytes))
@@ -45,7 +40,7 @@ def extract_text_from_file(file: UploadFile, file_bytes: bytes) -> str:
     else:
         raise HTTPException(status_code=415, detail=f"Unsupported file type: {file.filename}")
 
-def call_llm7_api(messages, retries=3, backoff_factor=5) -> Any:
+def call_llm7_api(messages, retries=3, backoff_factor=5):
     headers = {"Content-Type": "application/json"}
     data = {"model": MODEL, "messages": messages}
     for attempt in range(retries):
@@ -104,9 +99,7 @@ async def analyze_files(data_file: UploadFile = File(...), question_file: Upload
     combined_prompt = (
         f"Given the following CSV data:\n{data_text}\n\n"
         f"Answer the following questions **using ONLY the above data**:\n{question_text}\n\n"
-        "Respond ONLY with a JSON array in this format:\n"
-        "[<count_of_2bn_movies>, <earliest_film_title>, <correlation_float>, <optional_base64_image_or_null>]\n"
-        "Do NOT include explanations or other text."
+        "Respond ONLY with a JSON array as shown. Do NOT include explanations or other text."
     )
 
     messages = [
@@ -118,6 +111,7 @@ async def analyze_files(data_file: UploadFile = File(...), question_file: Upload
     stepwise_plan = result_json["choices"][0]["message"]["content"]
 
     try:
+        # Attempt to read the result as JSON array
         response_array = json.loads(stepwise_plan)
         if not isinstance(response_array, list):
             raise ValueError("Response is not a JSON array.")
@@ -131,9 +125,8 @@ async def analyze_files(data_file: UploadFile = File(...), question_file: Upload
 async def root():
     return {"message": "Welcome to the TDS Project API powered by LLM7.io!"}
 
-# === Vercel integration for serverless deployment ===
+# No need for vercel-fastapi or handler lines—Vercel/Railway/Render will pick up 'app' automatically
 
-# === Local development (can be omitted for Vercel deploy) ===
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
