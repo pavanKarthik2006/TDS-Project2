@@ -4,3 +4,4 @@ python-dotenv
 pandas
 PyPDF2
 python-multipart
+requests
