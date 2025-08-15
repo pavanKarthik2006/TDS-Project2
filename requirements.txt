@@ -5,3 +5,4 @@ pandas
 PyPDF2
 python-multipart
 requests
+matplotlib
